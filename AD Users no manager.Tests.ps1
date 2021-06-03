@@ -26,7 +26,6 @@ BeforeAll {
     Mock Invoke-Sqlcmd2
     Mock Send-MailHC
     Mock Write-EventLog
-    Mock Get-ADuserWithoutOCSHC
     Mock Get-ADDisplayNameHC
     Mock Get-ADDisplayNameFromSID
     Mock Get-ADCircularGroupsHC
