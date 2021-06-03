@@ -104,7 +104,7 @@ OU=Does,DC=Not,Exist=net
 
             Should -Invoke Send-MailHC -Exactly 1 -ParameterFilter {
                 (&$MailAdminParams) -and 
-                ($Message -like "The supplied distinguishedName must belong to one of the following*")
+                ($Message -like "*Cannot validate argument on parameter 'OU'*")
             }
         } 
         It 'MailTo missing' {
