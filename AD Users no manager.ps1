@@ -1,20 +1,20 @@
 ﻿<#
     .SYNOPSIS
-        Report about all the users that don't have a manager assigned to them 
+        Report about all the users that don't have a manager assigned to them
         in the AD.
 
     .DESCRIPTION
-        Report about all the users that don't have a manager assigned to them 
-        in the AD. The report is an e-mail containing the total number of users 
-        per country that don't have a manager. In attachment is an Excel sheet 
+        Report about all the users that don't have a manager assigned to them
+        in the AD. The report is an e-mail containing the total number of users
+        per country that don't have a manager. In attachment is an Excel sheet
         containing these specific users.
 
-        When an AD group name is provided with the parameter 'ADGroup' in the 
-        'ImportFile' we check if users are member of one of these groups and 
+        When an AD group name is provided with the parameter 'ADGroup' in the
+        'ImportFile' we check if users are member of one of these groups and
         add an extra boolean column to the Excel file for each group name.
 
         All results are stored in an SQL database for use in the Excel sheet by
-        the PivotTable. This to generate a line graph with an overview of 
+        the PivotTable. This to generate a line graph with an overview of
         progress throughout time.
 
     .PARAMETER ImportFile

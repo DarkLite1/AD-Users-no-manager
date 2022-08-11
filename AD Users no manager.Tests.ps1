@@ -60,10 +60,10 @@ MailTo: bob@contoso.com
 ADGroup: BEL ATT Leaver
 # BEL ATT Leaver
 
-OUs: OU=Users,OU=BEL,OU=EU,DC=grouphc,DC=net                                                                         
-OUs: OU=Users,OU=NLD,OU=EU,DC=grouphc,DC=net                                                                         
+OUs: OU=Users,OU=BEL,OU=EU,DC=grouphc,DC=net
+OUs: OU=Users,OU=NLD,OU=EU,DC=grouphc,DC=net
 
-#OUs: OU=Users,OU=CZE,OU=EU,DC=grouphc,DC=net  
+#OUs: OU=Users,OU=CZE,OU=EU,DC=grouphc,DC=net
 "@
             $fakeInputFile | Out-File @OutParams
 
