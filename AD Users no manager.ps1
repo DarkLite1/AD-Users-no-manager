@@ -36,8 +36,8 @@ Param (
     [String]$SQLServerInstance = 'GRPSDFRAN0049',
     [String]$SQLDatabase = 'PowerShell',
     [String]$SQLTableReportUsersNoManager = 'ReportUsersNoManager',
-    [String]$LogFolder = $env:POWERSHELL_LOG_FOLDER,
-    [String]$ScriptAdmin = $env:POWERSHELL_SCRIPT_ADMIN
+    [String]$LogFolder = "$env:POWERSHELL_LOG_FOLDER\AD Reports\AD Users no manager\$ScriptName",
+    [String[]]$ScriptAdmin = $env:POWERSHELL_SCRIPT_ADMIN
 )
 
 Begin {
@@ -47,13 +47,18 @@ Begin {
         Write-EventLog @EventStartParams
 
         #region Logging
-        $LogParams = @{
-            LogFolder    = New-FolderHC -Path $LogFolder -ChildPath "AD Reports\AD Users no manager\$ScriptName"
-            Name         = $ScriptName
-            Date         = 'ScriptStartTime'
-            NoFormatting = $true
+        try {
+            $logParams = @{
+                LogFolder    = New-Item -Path $LogFolder -ItemType 'Directory' -Force -ErrorAction 'Stop'
+                Name         = $ScriptName
+                Date         = 'ScriptStartTime'
+                NoFormatting = $true
+            }
+            $logFile = New-LogFileNameHC @LogParams
         }
-        $LogFile = New-LogFileNameHC @LogParams
+        Catch {
+            throw "Failed creating the log folder '$LogFolder': $_"
+        }
         #endregion
 
         $SQLParams = @{
