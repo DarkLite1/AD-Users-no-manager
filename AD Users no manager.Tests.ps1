@@ -1,4 +1,4 @@
-﻿#Requires -Modules ActiveDirectory, Assert, Pester
+﻿#Requires -Modules ActiveDirectory, Pester
 #Requires -Version 5.1
 
 BeforeAll {
@@ -76,8 +76,8 @@ OUs: OU=Users,OU=NLD,OU=EU,DC=grouphc,DC=net
                 'OUs: OU=Users,OU=NLD,OU=EU,DC=grouphc,DC=net'
             )
 
-            Assert-Equivalent -Actual $File -Expected $Expected
-        } 
+            $File | Should -BeExactly $Expected
+        } -tag test
         It 'OU missing' {
             $fakeInputFile = @"
 MailTo: bob@contoso.com
