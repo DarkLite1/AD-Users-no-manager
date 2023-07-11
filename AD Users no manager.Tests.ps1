@@ -14,10 +14,12 @@ BeforeAll {
         ImportFile  = $OutParams.FilePath
         SQLDatabase = 'PowerShell TEST'
         LogFolder   = (New-Item "TestDrive:/log" -ItemType Directory).FullName
+        ScriptAdmin = 'admin@contoso.com'
     }
     
     $MailAdminParams = {
-        ($To -eq $ScriptAdmin) -and ($Priority -eq 'High') -and ($Subject -eq 'FAILURE')
+        ($To -eq $testParams.ScriptAdmin) -and ($Priority -eq 'High') -and 
+        ($Subject -eq 'FAILURE')
     }
     
     $ADOUExisting = Get-ADOrganizationalUnit -Filter * | 
