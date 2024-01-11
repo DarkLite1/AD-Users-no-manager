@@ -1,0 +1,12 @@
+{
+  "MailTo": ["bob@contoso.com"],
+  "AD": {
+    "OU": [
+      "OU=BEL,OU=EU,DC=contoso,DC=com",
+      "OU=LUX,OU=EU,DC=contoso,DC=com",
+      "OU=NLD,OU=EU,DC=contoso,DC=com"
+    ],
+    "GroupName": ["Directors"],
+    "?": "Check if users are a member of the groups in GroupName"
+  }
+}
