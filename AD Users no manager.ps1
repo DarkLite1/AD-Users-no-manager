@@ -77,23 +77,28 @@ Begin {
             ErrorAction       = 'Stop'
         }
 
+        #region Import input file
         $ImportFileName = (Get-Item $ImportFile -EA Stop).BaseName
-        $File = Get-Content $ImportFile -EA Stop | Remove-CommentsHC
 
-        if (-not ($MailTo = $File | Get-ValueFromArrayHC MailTo -Delimiter ',')) {
-            throw "No 'MailTo' found in the input file."
+        $File = Get-Content $ImportFile -Raw -EA Stop | ConvertFrom-Json
+
+        if (-not ($MailTo = $File.MailTo)) {
+            throw "Input file '$ImportFile': No 'MailTo' addresses found."
         }
 
-        if (-not ($OUs = $File | Get-ValueFromArrayHC -Exclude MailTo, ADGroup)) {
-            throw 'No organizational units found in the input file.'
+        if (-not ($adOUs = $File.AD.OU)) {
+            throw "Input file '$ImportFile': No 'AD.OU' found."
         }
 
-        $ADGroups = foreach ($A in ($File | Get-ValueFromArrayHC ADGroup -Delimiter ',')) {
+        $adGroupNames = $File.AD.GroupName
+
+        $adGroups = foreach ($groupName in $adGroupNames) {
             [PSCustomObject]@{
-                Name    = $A
-                Members = Get-ADGroupMember $A -Recursive
+                Name    = $groupName
+                Members = Get-ADGroupMember $groupName -Recursive
             }
         }
+        #endregion
     }
     Catch {
         Write-Warning $_
@@ -105,9 +110,9 @@ Begin {
 
 Process {
     Try {
-        $UsersNoManager = Get-AdUserNoManagerHC -OU $OUs -EA Stop
+        $UsersNoManager = Get-ADUserNoManagerHC -OU $adOUs -EA Stop
 
-        $HtmlOus = $OUs | ConvertTo-OuNameHC -OU | Sort-Object | 
+        $HtmlOus = $adOUs | ConvertTo-OuNameHC -OU | Sort-Object |
         ConvertTo-HtmlListHC -Header 'Organizational units:'
 
         Switch (($UsersNoManager | Measure-Object).Count) {
@@ -129,12 +134,12 @@ Process {
         }
 
         if ($UsersNoManager) {
-            if ($ADGroups) {
+            if ($adGroups) {
                 $UsersNoManager | ForEach-Object {
                     $Sam = $_.'Logon name'
 
                     $Properties = [Ordered]@{}
-                    $ADGroups | ForEach-Object {
+                    $adGroups | ForEach-Object {
                         $Properties.($_.Name) = $_.Members.SamAccountName -contains $Sam
                     }
 
@@ -145,32 +150,32 @@ Process {
             $Results = $UsersNoManager | Group-Object Country | Select-Object Count, Name
 
             foreach ($R in $Results) {
-                Invoke-Sqlcmd2 @SQLParams -Query "
+                Invoke-Sqlcmd @SQLParams -Query "
                     INSERT INTO $SQLTableReportUsersNoManager
                     (RunDate, ImportFile, Country, Total)
                     VALUES ('$("{0:yyyy-MM-dd HH:mm:ss}" -f $Now)',
                         '$ImportFileName', '$($R.Name)', '$($R.Count)')"
             }
 
-            $Results = Invoke-Sqlcmd2 @SQLParams -As PSObject -Query "
+            $Results = Invoke-Sqlcmd @SQLParams -Query "
                 SELECT * FROM $SQLTableReportUsersNoManager WHERE ImportFile = '$ImportFileName'"
 
             $ExcelParams = @{
-                Path          = $LogFile + '.xlsx'
-                AutoSize      = $true
-                FreezeTopRow  = $true
+                Path         = $LogFile + '.xlsx'
+                AutoSize     = $true
+                FreezeTopRow = $true
             }
 
-            $UsersNoManager | Export-Excel @ExcelParams -WorkSheetName Users -TableName User -NoNumberConversion 'Employee ID',
-                'OfficePhone', 'HomePhone', 'MobilePhone', 'ipPhone', 'Fax', 'Pager'
+            $UsersNoManager | Export-Excel @ExcelParams -WorksheetName Users -TableName User -NoNumberConversion 'Employee ID',
+            'OfficePhone', 'HomePhone', 'MobilePhone', 'ipPhone', 'Fax', 'Pager'
 
-            $Results | Export-Excel -Path $ExcelParams.Path -WorkSheetName HistoryLine -PivotRows RunDate -PivotColumns Country -PivotData @{Total = 'Sum'} -ChartType Line -IncludePivotTable -IncludePivotChart -HideSheet HistoryLine
+            $Results | Export-Excel -Path $ExcelParams.Path -WorksheetName HistoryLine -PivotRows RunDate -PivotColumns Country -PivotData @{Total = 'Sum' } -ChartType Line -IncludePivotTable -IncludePivotChart -HideSheet HistoryLine
 
-            $Results | Export-Excel -Path $ExcelParams.Path -WorkSheetName HistoryBar -PivotRows Country -PivotColumns RunDate -PivotData @{Total = 'Sum'} -ChartType ColumnClustered -IncludePivotChart -IncludePivotTable -HideSheet HistoryBar
+            $Results | Export-Excel -Path $ExcelParams.Path -WorksheetName HistoryBar -PivotRows Country -PivotColumns RunDate -PivotData @{Total = 'Sum' } -ChartType ColumnClustered -IncludePivotChart -IncludePivotTable -HideSheet HistoryBar
 
             $Table = $UsersNoManager | Group-Object Country |
-                Select-Object @{Name = "Country"; Expression = {$_."Name"}}, @{Name = "Total"; Expression = {$_."Count"}} |
-                Sort-Object Country | ConvertTo-Html -As Table -Fragment
+            Select-Object @{Name = "Country"; Expression = { $_."Name" } }, @{Name = "Total"; Expression = { $_."Count" } } |
+            Sort-Object Country | ConvertTo-Html -As Table -Fragment
 
             $Message = "$Intro
                         $Table
