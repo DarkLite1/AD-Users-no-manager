@@ -70,11 +70,12 @@ Begin {
         #endregion
 
         $SQLParams = @{
-            ServerInstance    = $SQLServerInstance
-            Database          = $SQLDatabase
-            QueryTimeout      = '1000'
-            ConnectionTimeout = '20'
-            ErrorAction       = 'Stop'
+            ServerInstance         = $SQLServerInstance
+            Database               = $SQLDatabase
+            TrustServerCertificate = $true
+            QueryTimeout           = '1000'
+            ConnectionTimeout      = '20'
+            ErrorAction            = 'Stop'
         }
 
         #region Import input file
