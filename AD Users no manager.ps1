@@ -63,17 +63,17 @@ Begin {
         #endregion
 
         #region Import input file
-        $File = Get-Content $ImportFile -Raw -EA Stop | ConvertFrom-Json
+        $file = Get-Content $ImportFile -Raw -EA Stop | ConvertFrom-Json
 
-        if (-not ($MailTo = $File.MailTo)) {
+        if (-not ($MailTo = $file.MailTo)) {
             throw "Input file '$ImportFile': No 'MailTo' addresses found."
         }
 
-        if (-not ($adOUs = $File.AD.OU)) {
+        if (-not ($adOUs = $file.AD.OU)) {
             throw "Input file '$ImportFile': No 'AD.OU' found."
         }
 
-        $adGroupNames = $File.AD.GroupName
+        $adGroupNames = $file.AD.GroupName
 
         $adGroups = foreach ($groupName in $adGroupNames) {
             [PSCustomObject]@{
@@ -93,12 +93,12 @@ Begin {
 
 Process {
     Try {
-        $UsersNoManager = Get-ADUserNoManagerHC -OU $adOUs -EA Stop
+        $usersNoManager = Get-ADUserNoManagerHC -OU $adOUs -EA Stop
 
-        $HtmlOus = $adOUs | ConvertTo-OuNameHC -OU | Sort-Object |
+        $htmlOuList = $adOUs | ConvertTo-OuNameHC -OU | Sort-Object |
         ConvertTo-HtmlListHC -Header 'Organizational units:'
 
-        Switch (($UsersNoManager | Measure-Object).Count) {
+        Switch (($usersNoManager | Measure-Object).Count) {
             '0' {
                 $Intro = "<p>All users have a manager assigned.</p>"
                 $Subject = "All users have a manager assigned"
@@ -116,9 +116,9 @@ Process {
             }
         }
 
-        if ($UsersNoManager) {
+        if ($usersNoManager) {
             if ($adGroups) {
-                $UsersNoManager | ForEach-Object {
+                $usersNoManager | ForEach-Object {
                     $Sam = $_.'Logon name'
 
                     $Properties = [Ordered]@{}
@@ -136,10 +136,10 @@ Process {
                 FreezeTopRow = $true
             }
 
-            $UsersNoManager | Export-Excel @ExcelParams -WorksheetName Users -TableName User -NoNumberConversion 'Employee ID',
+            $usersNoManager | Export-Excel @ExcelParams -WorksheetName Users -TableName User -NoNumberConversion 'Employee ID',
             'OfficePhone', 'HomePhone', 'MobilePhone', 'ipPhone', 'Fax', 'Pager'
 
-            $Table = $UsersNoManager | Group-Object Country |
+            $Table = $usersNoManager | Group-Object Country |
             Select-Object @{Name = "Country"; Expression = { $_."Name" } }, @{Name = "Total"; Expression = { $_."Count" } } |
             Sort-Object Country | ConvertTo-Html -As Table -Fragment
 
@@ -165,7 +165,7 @@ End {
             To          = $MailTo
             Bcc         = $ScriptAdmin
             Subject     = $Subject
-            Message     = $Message, $HtmlOus
+            Message     = $Message, $htmlOuList
             Attachments = $ExcelParams.Path
             Priority    = $Priority
             LogFolder   = $LogParams.LogFolder
