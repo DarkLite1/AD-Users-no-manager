@@ -63,8 +63,6 @@ Begin {
         #endregion
 
         #region Import input file
-        $ImportFileName = (Get-Item $ImportFile -EA Stop).BaseName
-
         $File = Get-Content $ImportFile -Raw -EA Stop | ConvertFrom-Json
 
         if (-not ($MailTo = $File.MailTo)) {
