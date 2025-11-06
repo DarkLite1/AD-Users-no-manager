@@ -12,7 +12,6 @@ BeforeAll {
     $testParams = @{
         ScriptName  = 'Test'
         ImportFile  = $OutParams.FilePath
-        SQLDatabase = 'PowerShell TEST'
         LogFolder   = (New-Item "TestDrive:/log" -ItemType Directory).FullName
         ScriptAdmin = 'admin@contoso.com'
     }
@@ -25,7 +24,6 @@ BeforeAll {
     $ADOUExisting = Get-ADOrganizationalUnit -Filter * |
     Select-Object -First 1 -ExpandProperty DistinguishedName
 
-    Mock Invoke-Sqlcmd
     Mock Send-MailHC
     Mock Write-EventLog
     Mock Get-ADDisplayNameHC

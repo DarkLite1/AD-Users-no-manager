@@ -18,10 +18,6 @@
         'ImportFile' we check if users are member of one of these groups and
         add an extra boolean column to the Excel file for each group name.
 
-        All results are stored in an SQL database for use in the Excel sheet by
-        the PivotTable. This to generate a line graph with an overview of
-        progress throughout time.
-
     .PARAMETER ImportFile
         Contains all needed parameters:
         - MailTo
@@ -38,9 +34,6 @@ Param (
     [String]$ScriptName = 'AD Users no manager',
     [Parameter(Mandatory)]
     [String]$ImportFile,
-    [String]$SQLServerInstance = 'GRPSDFRAN0049',
-    [String]$SQLDatabase = 'PowerShell',
-    [String]$SQLTableReportUsersNoManager = 'ReportUsersNoManager',
     [String]$LogFolder = "$env:POWERSHELL_LOG_FOLDER\AD Reports\AD Users no manager\$ScriptName",
     [String[]]$ScriptAdmin = @(
         $env:POWERSHELL_SCRIPT_ADMIN,
@@ -68,15 +61,6 @@ Begin {
             throw "Failed creating the log folder '$LogFolder': $_"
         }
         #endregion
-
-        $SQLParams = @{
-            ServerInstance         = $SQLServerInstance
-            Database               = $SQLDatabase
-            TrustServerCertificate = $true
-            QueryTimeout           = '1000'
-            ConnectionTimeout      = '20'
-            ErrorAction            = 'Stop'
-        }
 
         #region Import input file
         $ImportFileName = (Get-Item $ImportFile -EA Stop).BaseName
@@ -148,19 +132,6 @@ Process {
                 }
             }
 
-            $Results = $UsersNoManager | Group-Object Country | Select-Object Count, Name
-
-            foreach ($R in $Results) {
-                Invoke-Sqlcmd @SQLParams -Query "
-                    INSERT INTO $SQLTableReportUsersNoManager
-                    (RunDate, ImportFile, Country, Total)
-                    VALUES ('$("{0:yyyy-MM-dd HH:mm:ss}" -f $Now)',
-                        '$ImportFileName', '$($R.Name)', '$($R.Count)')"
-            }
-
-            $Results = Invoke-Sqlcmd @SQLParams -Query "
-                SELECT * FROM $SQLTableReportUsersNoManager WHERE ImportFile = '$ImportFileName'"
-
             $ExcelParams = @{
                 Path         = $LogFile + '.xlsx'
                 AutoSize     = $true
@@ -169,10 +140,6 @@ Process {
 
             $UsersNoManager | Export-Excel @ExcelParams -WorksheetName Users -TableName User -NoNumberConversion 'Employee ID',
             'OfficePhone', 'HomePhone', 'MobilePhone', 'ipPhone', 'Fax', 'Pager'
-
-            $Results | Export-Excel -Path $ExcelParams.Path -WorksheetName HistoryLine -PivotRows RunDate -PivotColumns Country -PivotData @{Total = 'Sum' } -ChartType Line -IncludePivotTable -IncludePivotChart -HideSheet HistoryLine
-
-            $Results | Export-Excel -Path $ExcelParams.Path -WorksheetName HistoryBar -PivotRows Country -PivotColumns RunDate -PivotData @{Total = 'Sum' } -ChartType ColumnClustered -IncludePivotChart -IncludePivotTable -HideSheet HistoryBar
 
             $Table = $UsersNoManager | Group-Object Country |
             Select-Object @{Name = "Country"; Expression = { $_."Name" } }, @{Name = "Total"; Expression = { $_."Count" } } |
