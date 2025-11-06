@@ -43,7 +43,7 @@ Param (
 
 Begin {
     Try {
-        $Now = Get-ScriptRuntimeHC -Start
+        Get-ScriptRuntimeHC -Start
         Import-EventLogParamsHC -Source $ScriptName
         Write-EventLog @EventStartParams
 
